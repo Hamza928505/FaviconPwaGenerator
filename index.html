@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favicon & PWA Icon Generator</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>⚡ Favicon & PWA Generator</h1>
+            <p>Generate all required icon sizes from a single image</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-grid">
+            <!-- Upload Section -->
+            <div class="card">
+                <h2>📤 Upload Image</h2>
+                <p>Upload your logo or image to generate icons</p>
+
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📤</div>
+                    <p class="upload-text">Drag & drop your image</p>
+                    <p class="upload-subtext">or click to browse</p>
+                    <input type="file" id="imageInput" accept="image/png,image/jpeg" hidden>
+                </div>
+
+                <div id="previewContainer" style="display: none;">
+                    <p class="label">Preview:</p>
+                    <img id="preview" alt="Preview" class="preview-image">
+                    <button id="editBtn" class="btn btn-secondary">✏️ Edit Image (Crop & Rotate)</button>
+                </div>
+
+                <!-- Settings -->
+                <div class="settings">
+                    <div class="form-group">
+                        <label>App Name</label>
+                        <input type="text" id="appName" value="My App" class="input">
+                    </div>
+
+                    <div class="form-group">
+                        <label>App Short Name</label>
+                        <input type="text" id="appShortName" value="App" class="input">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Theme Color</label>
+                            <div class="color-input-group">
+                                <input type="color" id="themeColor" value="#00D9FF" class="color-input">
+                                <input type="text" id="themeColorText" value="#00D9FF" class="input">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Background</label>
+                            <div class="color-input-group">
+                                <input type="color" id="bgColor" value="#0F1419" class="color-input">
+                                <input type="text" id="bgColorText" value="#0F1419" class="input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="transparent">
+                        <label for="transparent">Transparent Background</label>
+                    </div>
+
+                    <button id="generateBtn" class="btn btn-primary btn-full">Generate Icons</button>
+                </div>
+            </div>
+
+            <!-- Generated Icons Section -->
+            <div class="card">
+                <h2>🎨 Generated Icons</h2>
+                <p>Preview of all generated icon sizes</p>
+
+                <div id="iconsContainer" class="icons-container" style="display: none;">
+                    <div id="iconsList"></div>
+                    <button id="downloadZipBtn" class="btn btn-secondary btn-full">📦 Download All as ZIP</button>
+                </div>
+
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-icon">🖼️</div>
+                    <p>Generate icons to see preview</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Snippets -->
+        <div id="codeSection" class="card" style="display: none;">
+            <h2>📝 HTML Head Snippet</h2>
+
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="html">HTML</button>
+                <button class="tab-btn" data-tab="manifest">Manifest</button>
+            </div>
+
+            <div id="html" class="tab-content active">
+                <textarea id="htmlSnippet" class="code-textarea" readonly></textarea>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="copyToClipboard('htmlSnippet')">📋 Copy</button>
+                    <button class="btn btn-secondary" onclick="downloadFile('htmlSnippet', 'favicon-snippet.html')">📥 Download</button>
+                </div>
+            </div>
+
+            <div id="manifest" class="tab-content" style="display: none;">
+                <textarea id="manifestSnippet" class="code-textarea" readonly></textarea>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="copyToClipboard('manifestSnippet')">📋 Copy</button>
+                    <button class="btn btn-secondary" onclick="downloadFile('manifestSnippet', 'manifest.json')">📥 Download</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Device Previews -->
+        <div id="deviceSection" class="card" style="display: none;">
+            <h2>📱 Device Previews</h2>
+            <p>See how your icon looks on different devices</p>
+
+            <div class="device-grid">
+                <!-- Mobile Preview -->
+                <div class="device-card">
+                    <div class="device-label">📱 Mobile</div>
+                    <div class="device-frame mobile-frame">
+                        <div class="mobile-screen">
+                            <div class="status-bar">
+                                <span>9:41</span>
+                                <span>📶</span>
+                            </div>
+                            <div class="app-grid">
+                                <div class="app-icon-slot">
+                                    <img id="mobileIcon" alt="App Icon" class="app-icon">
+                                </div>
+                                <div class="app-name" id="mobileName">My App</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desktop Preview -->
+                <div class="device-card">
+                    <div class="device-label">🖥️ Desktop</div>
+                    <div class="device-frame desktop-frame">
+                        <div class="browser-chrome">
+                            <div class="browser-buttons">
+                                <div class="button red"></div>
+                                <div class="button yellow"></div>
+                                <div class="button green"></div>
+                            </div>
+                            <div class="address-bar">🔒 example.com</div>
+                        </div>
+                        <div class="browser-content">
+                            <img id="desktopIcon" alt="App Icon" class="desktop-icon">
+                            <h3 id="desktopName">My App</h3>
+                            <p>Your awesome app</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tip">
+                💡 <strong>Tip:</strong> These previews show how your icon will appear on different devices. The actual appearance may vary slightly depending on the device and OS version.
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>💡 All processing is done locally in your browser. Your images are never uploaded to any server.</p>
+        </div>
+    </div>
+
+    <!-- Image Editor Modal -->
+    <div id="editorModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>✏️ Edit Image</h2>
+
+            <div class="editor-controls">
+                <div class="control-group">
+                    <label>Rotation: <span id="rotationValue">0</span>°</label>
+                    <div class="button-group">
+                        <button class="btn btn-small" onclick="rotateLeft()">↺ Left</button>
+                        <button class="btn btn-small" onclick="rotateRight()">Right ↻</button>
+                    </div>
+                    <input type="range" id="rotationSlider" min="0" max="360" value="0" class="slider">
+                </div>
+
+                <div class="control-group">
+                    <label>Zoom: <span id="zoomValue">1.0</span>x</label>
+                    <input type="range" id="zoomSlider" min="0.5" max="3" value="1" step="0.1" class="slider">
+                </div>
+
+                <div class="control-group">
+                    <label>Smart Crop Sensitivity: <span id="cropSensitivityValue">20</span>%</label>
+                    <input type="range" id="cropSensitivitySlider" min="5" max="50" value="20" step="1" class="slider">
+                    <button class="btn btn-secondary btn-full" onclick="applySmartCrop()">✨ Smart Crop</button>
+                </div>
+
+                <button class="btn btn-secondary btn-full" onclick="toggleCropMode()">📐 Manual Crop</button>
+                <button class="btn btn-primary btn-full" onclick="applyAndContinue()">✓ Apply & Continue</button>
+                <button class="btn btn-outline btn-full" onclick="closeEditor()">Cancel</button>
+            </div>
+
+            <canvas id="editorCanvas" class="editor-canvas"></canvas>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
